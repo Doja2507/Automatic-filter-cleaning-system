@@ -1,0 +1,100 @@
+
+#include <Ultrasonic.h>
+ Ultrasonic ultrasonic(12, 13);
+
+  void setup() {
+    Serial.begin(9600);
+   }
+  Serial.println(ultrasonic.distanceRead());
+  delay(1000);
+   }
+
+int leftMotorForward = 3;            
+int  leftMotorBackward = 4;          
+int rightMotorForward  = 5;           
+int rightMotorBackward = 6;  
+int rightMotorENB = 8;            
+int leftMotorENB = 9;            
+#define LS 10    // left sensor                                         
+#define RS 7      // right sensor 
+
+void setup(){
+  pinMode(leftMotorForward, OUTPUT);
+  pinMode(rightMotorForward, OUTPUT); 
+  pinMode(leftMotorBackward, OUTPUT);  
+  pinMode(rightMotorBackward, OUTPUT);  /* initialize motor enable pins as output */
+  pinMode(leftMotorENB, OUTPUT); 
+  pinMode(rightMotorENB, OUTPUT);    
+
+// initialize sensor pins as input
+pinMode(LS, INPUT);
+  pinMode(RS, INPUT);
+
+}
+void loop() 
+{
+if(digitalRead(LS) && digitalRead(RS))     // code to Move Forward
+  { digitalWrite(leftMotorENB, HIGH);
+   digitalWrite(rightMotorENB, HIGH);
+    digitalWrite(leftMotorForward, HIGH);
+    digitalWrite(leftMotorBackward, LOW);
+    digitalWrite(rightMotorForward, HIGH);
+    digitalWrite(rightMotorBackward, LOW);
+  } 
+  if(!(digitalRead(LS)) && digitalRead(RS))     // code to  Turn right
+  {digitalWrite(leftMotorENB, HIGH);
+   digitalWrite(rightMotorENB, HIGH);
+    digitalWrite(leftMotorForward, LOW);
+    digitalWrite(leftMotorBackward, LOW);
+    digitalWrite(rightMotorForward, HIGH);
+    digitalWrite(rightMotorBackward, LOW);
+  }  
+  if(digitalRead(LS) && !(digitalRead(RS)))     // turn left
+  {digitalWrite(leftMotorENB, HIGH);
+   digitalWrite(rightMotorENB, HIGH);
+    digitalWrite(leftMotorForward, HIGH);
+    digitalWrite(leftMotorBackward, LOW);
+    digitalWrite(rightMotorForward, LOW);
+    digitalWrite(rightMotorBackward, LOW);
+  }
+  if(!(digitalRead(LS)) && !(digitalRead(RS)))     // stop
+  {digitalWrite(leftMotorENB, LOW);
+   digitalWrite(rightMotorENB, LOW);
+    digitalWrite(leftMotorForward, LOW);
+    digitalWrite(leftMotorBackward, LOW);
+    digitalWrite(rightMotorForward, LOW);
+    digitalWrite(rightMotorBackward, LOW);
+  }   
+}
+
+#include "iot_config.h"
+#include "dust_config.h"
+aws_iot_setup aws_iot;
+dust_setup dust_sensor;
+int measurePin = 4;
+int ledPower = 12;
+int relayPin = 13;
+float result;
+
+void setup() {
+  pinMode(ledPower, OUTPUT);
+  pinMode(relayPin, OUTPUT);
+  aws_iot.config();
+}
+void loop() {
+  // set dust density result
+  result = dust_sensor.init(measurePin, ledPower);
+
+  // AWS IoT MQTT for real-time data monitoring
+  aws_iot.data(result);
+
+  // if dust density more than 0.25 mg/m3, turn on air filter
+  if (result > 0.25){    
+    digitalWrite(relayPin, HIGH);
+  } else {
+    digitalWrite(relayPin, LOW);
+  }
+  
+  delay(1000);
+}
+
